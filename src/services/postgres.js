@@ -11,6 +11,7 @@ client
 // CREATE NEW RECORD
 
 async function create_record(
+  table_name,
   id,
   name,
   date_of_birth,
