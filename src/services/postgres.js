@@ -26,8 +26,9 @@ async function create_record(
   work_contents
 ) {
   const query = {
-    text: "INSERT INTO my_table (id, name, date_of_birth, address, phone, email, emergency_contact, emergency_person, date_of_employment, date_of_resignation, affiliation_fiscal_year, qualifications, work_content) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+    text: "INSERT INTO $1 (id, name, date_of_birth, address, phone, email, emergency_contact, emergency_person, date_of_employment, date_of_resignation, affiliation_fiscal_year, qualifications, work_content) VALUES ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
     values: [
+      table_name,
       id,
       name,
       date_of_birth,
@@ -146,3 +147,11 @@ async function retrieve_specfic_record(table_name, id) {
     console.error("Error retrieving records:", err);
   }
 }
+
+module.exports = {
+  create_record,
+  retrieve_all,
+  retrieve_specfic_record,
+  update_specific_record,
+  delete_record,
+};
