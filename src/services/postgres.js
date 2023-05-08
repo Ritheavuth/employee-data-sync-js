@@ -1,12 +1,5 @@
 const { Client } = require("pg");
-
-const dbConfig = {
-  host: "employee-db.cb1nrnmeyfto.us-east-1.rds.amazonaws.com",
-  port: 5432,
-  database: "employee_db",
-  user: "paylessgate",
-  password: "admin123",
-};
+import { dbConfig } from "../config/db";
 
 var client = new Client(dbConfig);
 
@@ -17,7 +10,7 @@ client
 
 // CREATE NEW RECORD
 
-function create_record(name, age) {
+function create_record(table, name, age) {
   client.query();
 }
 
