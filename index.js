@@ -1,23 +1,34 @@
-const { retrieve_all } = require("./src/services/postgres");
-const { list_record } = require("./src/services/airtable");
+const { create_record } = require("./src/services/postgres");
+const { dbConfig } = require("./src/config/db");
 
-async function compare_data() {
-  // Connect to Airtable and retrieve data
-  const airtableData = await list_record().then(function (result) {
-    console.log(result);
-  });
+const { Client } = require("pg");
 
-  // Connect to PostgreSQL and retrieve data
-  const postgresData = await retrieve_all();
+const client = new Client(dbConfig);
 
-  // Compare data
-  const airtableDataStr = JSON.stringify(airtableData);
-  const postgresDataStr = JSON.stringify(postgresData.rows);
-  if (airtableDataStr === postgresDataStr) {
-    console.log("Data is identical");
-  } else {
-    console.log("Data is different");
-  }
-}
+client.connect();
 
-compare_data();
+client.query('LISTEN events');
+
+client.on('notification', (notification) => {
+  console.log('Received notification:', notification.payload);
+  // Perform desired actions based on the received notification
+});
+
+
+setTimeout(() => {
+  create_record(
+    "E3",
+    "Someone",
+    new Date(2002, 11, 24),
+    "Phnom Penh",
+    "+855939456654",
+    "someone@somewhere.com",
+    "",
+    "",
+    new Date(2020, 10, 28),
+    new Date(2050, 10, 28),
+    30,
+    true,
+    "something"
+  );
+}, 7000);

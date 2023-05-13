@@ -5,7 +5,7 @@ var client = new Client(dbConfig);
 
 client
   .connect()
-  .then(() => console.log("Connected"))
+  .then(() => console.log("Services Connected"))
   .catch((err) => console.log("connect error", err.stack));
 
 // CREATE TABLE
@@ -48,7 +48,7 @@ async function create_record(
 
   try {
     const res = await client.query(query);
-    console.log("New record created:", res.rows[0]);
+    console.log("New record created:", res);
   } catch (err) {
     console.error("Error creating record:", err);
   }
