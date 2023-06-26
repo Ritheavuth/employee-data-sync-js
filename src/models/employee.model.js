@@ -99,6 +99,80 @@ Employee.findById = function (employeeId, result) {
   });
 };
 
+Employee.findEmployeeByEmail = (email, result) => {
+  sql.query(
+    "SELECT * FROM employees WHERE PersonalEmail = ?",
+    [email],
+    (err, res) => {
+      if (err) {
+        console.log("Error while querying the database: ", err);
+        result(err, null);
+        return;
+      }
+
+      if (res.length) {
+        // Found the employee with the given Personal email
+        result(null, res[0]);
+        return;
+      }
+
+      // Employee not found
+      result({ message: "Employee not found" }, null);
+    }
+  );
+};
+
+Employee.validateAdminLogin = (email, password, result) => {
+  Employee.findEmployeeByEmail(email, (err, employee) => {
+    if (err) {
+      result(err, null);
+      return;
+    }
+
+    if (!employee) {
+      result({ message: "Invalid credentials" }, null);
+      return;
+    }
+
+    if (!employee.Admin) {
+      result({ message: "Not authorized as an admin" }, null);
+      return;
+    }
+
+    bcrypt.compare(password, employee.Password, (bcryptErr, isMatch) => {
+      if (bcryptErr || !isMatch) {
+        result({ message: "Invalid credentials" }, null);
+        return;
+      }
+
+      result(null, employee);
+    });
+  });
+};
+
+Employee.validateEmployeeLogin = (email, password, result) => {
+  Employee.findEmployeeByEmail(email, (err, employee) => {
+    if (err) {
+      result(err, null);
+      return;
+    }
+
+    if (!employee) {
+      result({ message: "Invalid credentials" }, null);
+      return;
+    }
+
+    bcrypt.compare(password, employee.Password, (bcryptErr, isMatch) => {
+      if (bcryptErr || !isMatch) {
+        result({ message: "Invalid credentials" }, null);
+        return;
+      }
+
+      result(null, employee);
+    });
+  });
+};
+
 Employee.updateById = function (employeeId, employeeData, result) {
   sql.query(
     "UPDATE Employees SET ? WHERE id = ?",
@@ -167,4 +241,4 @@ Employee.removeAll = function (result) {
   });
 };
 
-module.exports = Employee
+module.exports = Employee;
