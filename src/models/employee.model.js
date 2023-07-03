@@ -1,4 +1,6 @@
 const sql = require("./db.js");
+const bcrypt = require('bcrypt');
+
 
 // constructor
 const Employee = function (employee) {
@@ -81,7 +83,7 @@ Employee.create = function (newEmployee, result) {
 };
 
 Employee.findById = function (employeeId, result) {
-  sql.query("SELECT * FROM Employees WHERE id = ?", employeeId, (err, res) => {
+  sql.query("SELECT * FROM Employees WHERE EmployeeNumber = ?", employeeId, (err, res) => {
     if (err) {
       console.log("Error finding employee: ", err);
       result(err, null);
@@ -101,7 +103,7 @@ Employee.findById = function (employeeId, result) {
 
 Employee.findEmployeeByEmail = (email, result) => {
   sql.query(
-    "SELECT * FROM employees WHERE PersonalEmail = ?",
+    "SELECT * FROM Employees WHERE PersonalEmail = ?",
     [email],
     (err, res) => {
       if (err) {
@@ -139,14 +141,11 @@ Employee.validateAdminLogin = (email, password, result) => {
       return;
     }
 
-    bcrypt.compare(password, employee.Password, (bcryptErr, isMatch) => {
-      if (bcryptErr || !isMatch) {
-        result({ message: "Invalid credentials" }, null);
-        return;
-      }
-
-      result(null, employee);
-    });
+    if (password !== employee.Password) {
+      result({ message: "Invalid Password" }, null);
+      return;
+    }
+    result(null, employee)
   });
 };
 
@@ -158,24 +157,21 @@ Employee.validateEmployeeLogin = (email, password, result) => {
     }
 
     if (!employee) {
-      result({ message: "Invalid credentials" }, null);
+      result({ message: "Employee not found" }, null);
       return;
     }
 
-    bcrypt.compare(password, employee.Password, (bcryptErr, isMatch) => {
-      if (bcryptErr || !isMatch) {
-        result({ message: "Invalid credentials" }, null);
-        return;
-      }
-
-      result(null, employee);
-    });
+    if (password !== employee.Password) {
+      result({ message: "Invalid Password" }, null);
+      return;
+    }
+    result(null, employee)
   });
 };
 
 Employee.updateById = function (employeeId, employeeData, result) {
   sql.query(
-    "UPDATE Employees SET ? WHERE id = ?",
+    "UPDATE Employees SET ? WHERE EmployeeNumber = ?",
     [employeeData, employeeId],
     (err, res) => {
       if (err) {
@@ -210,7 +206,7 @@ Employee.getAll = function (result) {
 };
 
 Employee.removeById = function (employeeId, result) {
-  sql.query("DELETE FROM Employees WHERE id = ?", employeeId, (err, res) => {
+  sql.query("DELETE FROM Employees WHERE EmployeeNumber = ?", employeeId, (err, res) => {
     if (err) {
       console.log("Error deleting employee: ", err);
       result(err, null);
