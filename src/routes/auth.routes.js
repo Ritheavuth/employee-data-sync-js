@@ -70,7 +70,7 @@ router.post("/employee/login", (req, res) => {
 
     // Generate JWT token for employee
     const token = jwt.sign(
-      { sub: employee.id, admin: false },
+      { sub: employee.EmployeeNumber, admin: 0 },
       config.JWTSecret
     );
 
