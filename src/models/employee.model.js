@@ -1,6 +1,4 @@
 const sql = require("./db.js");
-const bcrypt = require('bcrypt');
-
 
 // constructor
 const Employee = function (employee) {
@@ -70,20 +68,8 @@ const Employee = function (employee) {
   this.Admin = employee.Admin;
 };
 
-Employee.create = function (newEmployee, result) {
-  sql.query("INSERT INTO Employees SET ?", newEmployee, (err, res) => {
-    if (err) {
-      console.log("Error creating new employee: ", err);
-      result(err, null);
-      return;
-    }
-    console.log("New employee created: ", { id: res.insertId, ...newEmployee });
-    result(null, { id: res.insertId, ...newEmployee });
-  });
-};
-
-Employee.findById = function (employeeId, result) {
-  sql.query("SELECT * FROM Employees WHERE EmployeeNumber = ?", employeeId, (err, res) => {
+Employee.findById = function (employeeNumber, result) {
+  sql.query("SELECT * FROM Employees WHERE EmployeeNumber = ?", employeeNumber, (err, res) => {
     if (err) {
       console.log("Error finding employee: ", err);
       result(err, null);
@@ -124,31 +110,6 @@ Employee.findEmployeeByEmail = (email, result) => {
   );
 };
 
-Employee.validateAdminLogin = (email, password, result) => {
-  Employee.findEmployeeByEmail(email, (err, employee) => {
-    if (err) {
-      result(err, null);
-      return;
-    }
-
-    if (!employee) {
-      result({ message: "Invalid credentials" }, null);
-      return;
-    }
-
-    if (!employee.Admin) {
-      result({ message: "Not authorized as an admin" }, null);
-      return;
-    }
-
-    if (password !== employee.Password) {
-      result({ message: "Invalid Password" }, null);
-      return;
-    }
-    result(null, employee)
-  });
-};
-
 Employee.validateEmployeeLogin = (email, password, result) => {
   Employee.findEmployeeByEmail(email, (err, employee) => {
     if (err) {
@@ -166,74 +127,6 @@ Employee.validateEmployeeLogin = (email, password, result) => {
       return;
     }
     result(null, employee)
-  });
-};
-
-Employee.updateById = function (employeeId, employeeData, result) {
-  sql.query(
-    "UPDATE Employees SET ? WHERE EmployeeNumber = ?",
-    [employeeData, employeeId],
-    (err, res) => {
-      if (err) {
-        console.log("Error updating employee: ", err);
-        result(err, null);
-        return;
-      }
-
-      if (res.affectedRows === 0) {
-        // Employee with the given ID not found
-        result({ message: "Employees not found" }, null);
-        return;
-      }
-
-      console.log("Employees updated: ", { id: employeeId, ...employeeData });
-      result(null, { id: employeeId, ...employeeData });
-    }
-  );
-};
-
-Employee.getAll = function (result) {
-  sql.query("SELECT * FROM Employees", (err, res) => {
-    if (err) {
-      console.log("Error retrieving employees: ", err);
-      result(err, null);
-      return;
-    }
-
-    console.log("Employees retrieved: ", res);
-    result(null, res);
-  });
-};
-
-Employee.removeById = function (employeeId, result) {
-  sql.query("DELETE FROM Employees WHERE EmployeeNumber = ?", employeeId, (err, res) => {
-    if (err) {
-      console.log("Error deleting employee: ", err);
-      result(err, null);
-      return;
-    }
-
-    if (res.affectedRows === 0) {
-      // Employee with the given ID not found
-      result({ message: "Employee not found" }, null);
-      return;
-    }
-
-    console.log("Employee deleted with id: ", employeeId);
-    result(null, { id: employeeId });
-  });
-};
-
-Employee.removeAll = function (result) {
-  sql.query("DELETE FROM Employees", (err, res) => {
-    if (err) {
-      console.log("Error deleting employees: ", err);
-      result(err, null);
-      return;
-    }
-
-    console.log("All employees deleted.");
-    result(null, res);
   });
 };
 

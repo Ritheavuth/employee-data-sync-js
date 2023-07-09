@@ -23,28 +23,8 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Admin Login
-router.post("/admin/login", (req, res) => {
-  const { email, password } = req.body;
-
-  // Validate admin login
-  Employee.validateAdminLogin(email, password, (err, employee) => {
-    if (err) {
-      return res.status(401).json({ error: err.message });
-    }
-
-    // Generate JWT token for admin
-    const token = jwt.sign(
-      { sub: employee.EmployeeNumber, admin: 1 },
-      config.JWTSecret
-    );
-
-    res.json({ token });
-  });
-});
-
 router.get("/employee/profile", authenticateToken, (req, res) => {
-  const employeeId = req.employee.sub;
+  const employeeId = req.employee.EmployeeNumber;
   Employee.findById(employeeId, (err, employee) => {
     if (err) {
       return res.status(500).json({ error: "Failed to fetch employee data" });
@@ -70,7 +50,7 @@ router.post("/employee/login", (req, res) => {
 
     // Generate JWT token for employee
     const token = jwt.sign(
-      { sub: employee.EmployeeNumber, admin: 0 },
+      { EmployeeNumber: employee.EmployeeNumber },
       config.JWTSecret
     );
 

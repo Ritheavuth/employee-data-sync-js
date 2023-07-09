@@ -1,5 +1,5 @@
 module.exports = {
-  APIURL: "http://your-api-url",
+  AirtableAPIURL: "https://api.airtable.com/v0/",
   JWTSecret: "your-jwt-secret",
   AdminRoute: "/admin/login",
   EmployeeRoute: "/employee/login",

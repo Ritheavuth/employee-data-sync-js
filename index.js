@@ -9,14 +9,13 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 
 const employeeRoutes = require("./src/routes/employee.routes");
-const authRoutes = require("./src/routes/auth.routes");
-const airtableRoutes = require("./src/routes/airtable.routes");
-const hightouchRoutes = require("./src/routes/hightouch.routes");
+const auth_airtableRoutes = require("./src/routes/auth_airtable.routes");
 
 app.use("/employee", employeeRoutes);
-app.use("/auth", authRoutes);
+app.use("/auth", auth_airtableRoutes);
 app.use("/air-table" ,airtableRoutes )
-app.use("/hightouch",hightouchRoutes)
+
+app.listen(5000, () => {console.log("Listening on Port 5000")})
 
 
-module.exports.handler = serverless(app)
+// module.exports.handler = serverless(app)
