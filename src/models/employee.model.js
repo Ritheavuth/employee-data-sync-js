@@ -68,66 +68,60 @@ const Employee = function (employee) {
   this.Admin = employee.Admin;
 };
 
-Employee.findById = function (employeeNumber, result) {
-  sql.query("SELECT * FROM Employees WHERE EmployeeNumber = ?", employeeNumber, (err, res) => {
-    if (err) {
-      console.log("Error finding employee: ", err);
-      result(err, null);
-      return;
-    }
-
-    if (res.length) {
-      console.log("Employee found: ", res[0]);
-      result(null, res[0]);
-      return;
-    }
-
-    // Employee with the given ID not found
-    result({ message: "Employee not found" }, null);
-  });
-};
-
-Employee.findEmployeeByEmail = (email, result) => {
-  sql.query(
-    "SELECT * FROM Employees WHERE PersonalEmail = ?",
-    [email],
-    (err, res) => {
+Employee.findAll = function () {
+  return new Promise((resolve, reject) => {
+    sql.query("SELECT * FROM Employees", (err, res) => {
       if (err) {
-        console.log("Error while querying the database: ", err);
-        result(err, null);
+        console.log("Error retrieving employees: ", err);
+        reject(err);
         return;
       }
 
-      if (res.length) {
-        // Found the employee with the given Personal email
-        result(null, res[0]);
-        return;
-      }
-
-      // Employee not found
-      result({ message: "Employee not found" }, null);
-    }
-  );
-};
-
-Employee.validateEmployeeLogin = (email, password, result) => {
-  Employee.findEmployeeByEmail(email, (err, employee) => {
-    if (err) {
-      result(err, null);
-      return;
-    }
-
-    if (!employee) {
-      result({ message: "Employee not found" }, null);
-      return;
-    }
-
-    if (password !== employee.Password) {
-      result({ message: "Invalid Password" }, null);
-      return;
-    }
-    result(null, employee)
+      const employees = res.map((employee) => new Employee(employee));
+      resolve(employees);
+    });
   });
 };
 
+// Method to insert a new employee
+Employee.insert = function (newEmployee) {
+  return new Promise((resolve, reject) => {
+    sql.query('INSERT INTO Employees SET ?', newEmployee, (err, res) => {
+      if (err) {
+        console.error('Error inserting employee:', err);
+        reject(err);
+        return;
+      }
+      resolve(res);
+    });
+  });
+};
+
+// Method to update an employee
+Employee.update = function (employeeId, updatedEmployee) {
+  return new Promise((resolve, reject) => {
+    sql.query('UPDATE Employees SET ? WHERE EmployeeNumber = ?', [updatedEmployee, employeeId], (err, res) => {
+      if (err) {
+        console.error('Error updating employee:', err);
+        reject(err);
+        return;
+      }
+      resolve(res);
+    });
+  });
+};
+
+// Method to delete an employee
+Employee.remove = function (employeeId) {
+  return new Promise((resolve, reject) => {
+    sql.query('DELETE FROM Employees WHERE EmployeeNumber = ?', employeeId, (err, res) => {
+      if (err) {
+        console.error('Error deleting employee:', err);
+        reject(err);
+        return;
+      }
+      resolve(res);
+    });
+  });
+};
 module.exports = Employee;
