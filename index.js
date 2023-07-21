@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Enable CORS
 app.use(function(req, res, next) {
-  res.header('Access-Control-Allow-Origin', ['http://localhost:8080', 'http://44.201.86.169:8080']);
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   next();
