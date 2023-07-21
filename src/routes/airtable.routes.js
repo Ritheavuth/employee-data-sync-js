@@ -1,240 +1,348 @@
-const express = require('express');
-const router = express.Router();
-const fetch = require("node-fetch").default;
+const router = require("express").Router();
+var Airtable = require("airtable");
+var config = require("../config/airtable.config");
 
-const Employee = require('../models/employee.model');
-const update_multi_record = require('../airtable/employee_airtable').update_multi_record;
-const create_record = require('../airtable/employee_airtable').create_record;
+var base = new Airtable({ apiKey: config.APIKEY }).base(config.BASE_ID);
 
-const AIRTABLE_BASE_URL = "https://api.airtable.com/v0/";
-const BASE_ID = "appI1LPBCtqT1pNPV";
-const TABLE_ID = "tbluaX7XZKk2uIbxr";
+router.get("/basic/", (req, res) => {
+  const jsonData = [];
 
-const TOKEN = "pat4LnrP0iHYxlxrz.0f4d87665a1863959a1aede7d4a88836a665c3bb0d14b65a8248d5821deb8bc4";
-
-var api_url = AIRTABLE_BASE_URL + `${BASE_ID}/${TABLE_ID}`;
-
-
-// create table 
-router.post('/create-table' , async (req, res) => {
-    api_url = AIRTABLE_BASE_URL + `${BASE_ID}/tables`;
-    const fields = []
-    var keys = []
-    Employee.getAll(async(err, employees) => {
-        if (err) {
-            res.json({error: 'Failed to retrieve employees' , messasge : err , statusCode : 500})
-        }
-        keys  = Object.keys(employees[0])
-        console.log(keys)
-        fields.push(keys.map((key) => {
-            return {
-                "name": key,
-                "type": "singleLineText"
-            }
-        }
-        ))
+  base(config.TABLE_NAME)
+    .select({
+      fields: [
+        "EmployeeNumber",
+        "NameKanji",
+        "NameFurigana",
+        "Gender",
+        "BirthDate",
+        "JoiningDate",
+        "RetirementDate",
+        "Age",
+        "YearsInService",
+        "BloodType",
+        "Admin",
+      ],
+      sort: [{ field: "EmployeeNumber", direction: "asc" }],
     })
-    const data = {
-        "description": "A Sample Data",
-        "fields": fields , 
-        "name": "PaylessGate Employee Data"
+    .eachPage(
+      function page(records, fetchNextPage) {
+        // This function (`page`) will get called for each page of records.
+        records.forEach(function (record) {
+          jsonData.push(record._rawJson);
+        });
+        fetchNextPage();
+      },
+      function done(err) {
+        if (err) {
+          console.error(err);
+          return res
+            .status(500)
+            .json({ error: "An error occurred while fetching data." });
+        }
+        // Send the JSON data as the response
+        res.json(jsonData);
       }
-    const response = await fetch(api_url, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${TOKEN}`,
-            "Content-type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
-    if (response.status === 200) {
-        const data = await response.json();
-        res.json(data);
-    }
-    else{
-        res.json({error: 'Failed to create table asdas' , 
-        statusCode : response.status , 
-        messasge : response.statusText})
-
-    }
-})
-
-// create field
-router.post('/create-field' , async (req, res) => {
-    api_url = AIRTABLE_BASE_URL + `${BASE_ID}/${TABLE_ID}/fields`;
-    const fields = []
-    var keys = []
-    Employee.getAll(async(err, employees) => {
-        if (err) {
-            res.json({error: 'Failed to retrieve employees' , messasge : err , statusCode : 500})
-        }
-        keys  = Object.keys(employees[0])
-        console.log(keys)
-        fields.push(keys.map((key) => {
-            return {
-                "name": key,
-                "type": "singleLineText"
-            }
-        }
-        ))
-    })
-    const data = {
-        "description": "A Sample Data",
-        "fields": fields ,
-        "name": "PaylessGate Employee Data"
-        }
-    const response = await fetch(api_url, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${TOKEN}`,
-            "Content-type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
-    if (response.status === 200) {
-        const data = await response.json();
-        res.json(data);
-    }
-    else{
-        res.json({error: 'Failed to create table asdas' ,
-        statusCode : response.status ,
-        messasge : response.statusText})
-
-    }
-})
-
-
-
-// create record 
-router.post('/', async (req, res) => {
-
-    Employee.getAll(async(err, employees) => {
-
-        if (err) {
-            res.json({error: 'Failed to retrieve employees' , messasge : err})
-        }
-        const records2 = []
-     employees.map((employee) => {
-            records2.push(
-             {
-                fields: {
-                    NameKanji: employee.NameKanji,
-                  
-                }
-            }
-            )
-        })   
-        console.log(records2) 
-        const bodyContent1 = {
-            records: [
-              { fields: { NameKanji: 'Sato Hanako' } },
-              { fields: { NameKanji: 'Tanaka Misaki' } },
-              { fields: { NameKanji: 'Ito Yuma' } },
-            
-              { fields: { NameKanji: 'John Do ' } },
-              { fields: { NameKanji: 'Jane Smith' } },
-              { fields: { NameKanji: 'Alice Johnson' } },
-              { fields: { NameKanji: 'Emily Brown' } },
-              { fields: { NameKanji: 'Michael Johnson' } },
-              { fields: { NameKanji: 'Sophia Lee' } },
-              { fields: { NameKanji: 'David Kim' } },
-              { fields: { NameKanji: 'David Kim' } },
-
-              // Add more objects with ASCII values for NameKanji if needed
-            ]
-          };
-        const bodyContent2 = JSON.stringify({ records: JSON.parse(JSON.stringify(records2)) });
-        const body = (bodyContent1)
-        const response = await fetch(api_url, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${TOKEN}`,
-              "Content-type": "application/json",
-            },
-            body : JSON.stringify(bodyContent1)
-          });
-          if (response.status === 200) {
-            res.json({
-                message: 'Create record to Airtable successfully',
-                data : response.json()
-                });
-          }else{
-            res.json({
-                message: 'Create record to Airtable failed',
-                data :JSON.stringify(response) , 
-                statusText : response.statusText,   
-              });   
-          }
-            
-    });
-
+    );
 });
 
-// update data from DB to Airtable
-router.put('/', async (req, res) => { 
-    var records = [] 
-    Employee.getAll(async(err, employees) => {
-        if (err) {
-            res.json({error: 'Failed to retrieve employees' , messasge : err})
-        }
-        employees.map((employee) => {
-            console.log(employee.NameKanji)
-            records.push({'fields' : {"NameKanji": employee.NameKanji,}}) 
-
-        })
-
-    })
-    console.log("Records",records)
-    const data = JSON.stringify({
-        "performUpsert": {
-          "fieldsToMergeOn": [
-            "NameKanji"
-          ]
+router.post("/basic/", (req, res) => {
+  newEmployee = req.body;
+  base(config.TABLE_NAME).create(
+    [
+      {
+        fields: {
+          NameKanji: newEmployee.NameKanji,
+          NameFurigana: newEmployee.NameFurigana,
+          Gender: newEmployee.Gender,
+          BirthDate: newEmployee.BirthDate,
+          JoiningDate: newEmployee.JoiningDate,
+          RetirementDate: newEmployee.RetirementDate,
+          Age: newEmployee.Age,
+          YearsInService: newEmployee.YearsInService,
+          BloodType: newEmployee.BloodType,
+          Admin: newEmployee.Admin,
         },
-        "records": [{
-            "fields" : {
-                "NameKanji": "test",
-            }  ,
-        }]
+      },
+    ],
+    function (err, records) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      records.forEach(function (record) {
+        res.json({ record });
       });
-      const api_url = AIRTABLE_BASE_URL + `${BASE_ID}/${TABLE_ID}`;
-      const response = await fetch(api_url, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${TOKEN}`,
-          "Content-type": "application/json",
+    }
+  );
+});
+
+router.post("/basic/:id", (req, res) => {
+  recordId = req.params.id;
+  updatedBasicInfo = req.body;
+
+  base(config.TABLE_NAME).update(
+    [
+      {
+        id: recordId,
+        fields: {
+          NameKanji: updatedBasicInfo.NameKanji,
+          NameFurigana: updatedBasicInfo.NameFurigana,
+          Gender: updatedBasicInfo.Gender,
+          BirthDate: updatedBasicInfo.BirthDate,
+          JoiningDate: updatedBasicInfo.JoiningDate,
+          RetirementDate: updatedBasicInfo.RetirementDate,
+          Age: updatedBasicInfo.Age,
+          YearsInService: updatedBasicInfo.YearsInService,
+          BloodType: updatedBasicInfo.BloodType,
+          Admin: updatedBasicInfo.Admin,
         },
-        body:data
+      },
+    ],
+    function (err, records) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      records.forEach(function (record) {
+        res.json({ record });
       });
-      if (response.status === 200) {
-        const data = await response.json();
-        console.log("DATA : " + data)
-        res.json({
-            message: 'Update data from DB to Airtable successfully',
-            data : data ,
-            records : records
-            });      
-        }
-        else {
-            console.log(response)
-            res.status(500).json({ error: 'Failed to update data from DB to Airtable' ,
-            
-            messasge : response.statusText });
-        }
-     
-    //   return "ERROR: Couldn't update data to record id " + recordId;
-  
-    // Employee.getAll((err, employees) => {
-    //   if (err) {
-    //     console.log(err)
-    //     return res.status(500).json({ error: 'Failed to retrieve employees' , messasge : err });
-    //   }
-    //   const update = update_multi_record(employees);
-    //   res.json({
-    //     message: 'Update data from DB to Airtable successfully',
-    //     data : update
-    //   });
-    // });
+    }
+  );
+});
+
+router.delete("/info/:id", (req, res) => {
+  recordId = req.params.id;
+  base(config.TABLE_NAME).destroy([recordId], function (err, deletedRecords) {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    res.json({ message: "Deleted" });
   });
+});
 
-  module.exports = router;
+router.get("/personal/", (req, res) => {
+  const jsonData = [];
+  base(config.TABLE_NAME)
+    .select({
+      fields: [
+        "EmployeeNumber",
+        "HomeAddress",
+        "HomeZipCode",
+        "HomePhoneNumber",
+        "PersonalPhoneNumber",
+        "PersonalEmail",
+        "PersonalLineId",
+        "DrivingLicenseNumber",
+        "Qualifications",
+        "LastEducation",
+        "FamilyInfo",
+        "EmergencyContactInfo",
+      ],
+      sort: [{ field: "EmployeeNumber", direction: "asc" }],
+    })
+    .eachPage(
+      function page(records, fetchNextPage) {
+        // This function (`page`) will get called for each page of records.
+        records.forEach(function (record) {
+          jsonData.push(record._rawJson);
+        });
+        fetchNextPage();
+      },
+      function done(err) {
+        if (err) {
+          console.error(err);
+          return res
+            .status(500)
+            .json({ error: "An error occurred while fetching data." });
+        }
+        // Send the JSON data as the response
+        res.json(jsonData);
+      }
+    );
+});
+
+router.post("/personal/:id", (req, res) => {
+  recordId = req.params.id;
+  updatedPersonalInfo = req.body;
+
+  base(config.TABLE_NAME).update(
+    [
+      {
+        id: recordId,
+        fields: {
+          HomeAddress: updatedPersonalInfo.HomeAddress,
+          HomeZipCode: updatedPersonalInfo.HomeZipCode,
+          HomePhoneNumber: updatedPersonalInfo.HomePhoneNumber,
+          PersonalPhoneNumber: updatedPersonalInfo.PersonalPhoneNumber,
+          PersonalEmail: updatedPersonalInfo.PersonalEmail,
+          PersonalLineId: updatedPersonalInfo.PersonalLineId,
+          DrivingLicenseNumber: updatedPersonalInfo.DrivingLicenseNumber,
+          Qualifications: updatedPersonalInfo.Qualifications,
+          LastEducation: updatedPersonalInfo.LastEducation,
+          FamilyInfo: updatedPersonalInfo.FamilyInfo,
+          EmergencyContactInfo: updatedPersonalInfo.EmergencyContactInfo,
+        },
+      },
+    ],
+    function (err, records) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      records.forEach(function (record) {
+        res.json({ record });
+      });
+    }
+  );
+});
+
+router.get("/insurance/", (req, res) => {
+  const jsonData = [];
+  base(config.TABLE_NAME)
+    .select({
+      fields: [
+        "EmployeeNumber",
+        "BasicPensionNumber",
+        "HealthInsuranceNumber",
+        "HealthInsuranceDate",
+        "HealthInsuranceGrade",
+        "WelfarePensionNumber",
+      ],
+      sort: [{ field: "EmployeeNumber", direction: "asc" }],
+    })
+    .eachPage(
+      function page(records, fetchNextPage) {
+        // This function (`page`) will get called for each page of records.
+        records.forEach(function (record) {
+          jsonData.push(record._rawJson);
+        });
+        fetchNextPage();
+      },
+      function done(err) {
+        if (err) {
+          console.error(err);
+          return res
+            .status(500)
+            .json({ error: "An error occurred while fetching data." });
+        }
+        // Send the JSON data as the response
+        res.json(jsonData);
+      }
+    );
+});
+
+router.post("/insurance/:id", (req, res) => {
+  recordId = req.params.id;
+  updatedInsuranceInfo = req.body;
+
+  base(config.TABLE_NAME).update(
+    [
+      {
+        id: recordId,
+        fields: {
+          BasicPensionNumber: updatedInsuranceInfo.BasicPensionNumber,
+          HealthInsuranceNumber: updatedInsuranceInfo.HealthInsuranceNumber,
+          HealthInsuranceDate: updatedInsuranceInfo.HealthInsuranceDate,
+          HealthInsuranceGrade: updatedInsuranceInfo.HealthInsuranceGrade,
+          WelfarePensionNumber: updatedInsuranceInfo.WelfarePensionNumber,
+        },
+      },
+    ],
+    function (err, records) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      records.forEach(function (record) {
+        res.json({ record });
+      });
+    }
+  );
+});
+
+router.get("/salary/", (req, res) => {
+  const jsonData = [];
+  base(config.TABLE_NAME)
+    .select({
+      fields: [
+        "EmployeeNumber",
+        "CompanyA",
+        "CompanyB",
+        "GraduateOrMidcareer",
+        "MidCareerDetails",
+        "TransferredCompany",
+        "TransferDate",
+        "WorkLocation",
+        "CompanyPhoneNumber",
+        "CompanyEmail",
+        "Position",
+        "Team",
+        "ResponsiblePersonCode",
+        "EmploymentType",
+        "JobType",
+        "PersonalNumber",
+      ],
+      sort: [{ field: "EmployeeNumber", direction: "asc" }],
+    })
+    .eachPage(
+      function page(records, fetchNextPage) {
+        // This function (`page`) will get called for each page of records.
+        records.forEach(function (record) {
+          jsonData.push(record._rawJson);
+        });
+        fetchNextPage();
+      },
+      function done(err) {
+        if (err) {
+          console.error(err);
+          return res
+            .status(500)
+            .json({ error: "An error occurred while fetching data." });
+        }
+        // Send the JSON data as the response
+        res.json(jsonData);
+      }
+    );
+});
+
+router.post("/salary/:id", (req, res) => {
+  recordId = req.params.id;
+  updatedSalaryInfo = req.body;
+
+  base(config.TABLE_NAME).update(
+    [
+      {
+        id: recordId,
+        fields: {
+          CompanyA: updatedSalaryInfo.CompanyA,
+          CompanyB: updatedSalaryInfo.CompanyB,
+          GraduateOrMidcareer: updatedSalaryInfo.GraduateOrMidcareer,
+          MidCareerDetails: updatedSalaryInfo.MidCareerDetails,
+          TransferredCompany: updatedSalaryInfo.TransferredCompany,
+          TransferDate: updatedSalaryInfo.TransferDate,
+          WorkLocation: updatedSalaryInfo.WorkLocation,
+          CompanyPhoneNumber: updatedSalaryInfo.CompanyPhoneNumber,
+          CompanyEmail: updatedSalaryInfo.CompanyEmail,
+          Position: updatedSalaryInfo.Position,
+          Team: updatedSalaryInfo.Team,
+          ResponsiblePersonCode: updatedSalaryInfo.ResponsiblePersonCode,
+          EmploymentType: updatedSalaryInfo.EmploymentType,
+          JobType: updatedSalaryInfo.JobType,
+          PersonalNumber: updatedSalaryInfo.PersonalNumber,
+        },
+      },
+    ],
+    function (err, records) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      records.forEach(function (record) {
+        res.json({ record });
+      });
+    }
+  );
+});
+
+module.exports = router;
